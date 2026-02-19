@@ -21,6 +21,8 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     // weather UI starts here
                     var city by remember { mutableStateOf("") }
+                    var temperature by remember { mutableStateOf("")}
+                    var description by remember { mutableStateOf("")}
 
                     Column(
                         modifier =Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
