@@ -3,63 +3,100 @@ package com.example.howstheweather
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.Alignment
+import com.example.howstheweather.ui.screens.*
 import com.example.howstheweather.ui.theme.HowsTheWeatherTheme
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
+private const val API_KEY = "83e08c90d56320b579751f3203ff3e43"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://api.openweathermap.org/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val api = retrofit.create(WeatherAPI::class.java)
+
         setContent {
             HowsTheWeatherTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    // weather UI starts here
-                    var city by remember { mutableStateOf("") }
-                    var temperature by remember { mutableStateOf("")}
-                    var description by remember { mutableStateOf("")}
 
-                    Column(
-                        modifier =Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Top
+                var city by remember { mutableStateOf("") }
+                var temperature by remember { mutableStateOf("") }
+                var description by remember { mutableStateOf("") }
+                var screenState by remember { mutableStateOf<ScreenState>(ScreenState.Search) }
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = MaterialTheme.colorScheme.background
+                ) { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
                     ) {
-                        Row {
-                            TextField(
-                                value = city,
-                                onValueChange = { city = it },
-                                label = { Text("What place do you want to check the weather for?") }
+                        when (screenState) {
+                            ScreenState.Search -> SearchScreen(
+                                city = city,
+                                onCityChange = { city = it },
+                                onSearchClick = {
+                                    if (city.isNotBlank()) {
+                                        screenState = ScreenState.Loading
+
+                                        val call = api.getWeather(city, API_KEY)
+                                        call.enqueue(object : Callback<WeatherResponse> {
+                                            override fun onResponse(
+                                                call: Call<WeatherResponse>,
+                                                response: Response<WeatherResponse>
+                                            ) {
+                                                if (response.isSuccessful) {
+                                                    val weather = response.body()
+                                                    temperature = weather?.main?.temp?.toString() ?: "N/A"
+                                                    description = weather?.weather?.get(0)?.description ?: "N/A"
+                                                } else {
+                                                    temperature = "Error"
+                                                    description = "City not found"
+                                                }
+                                                screenState = ScreenState.Results
+                                            }
+
+                                            override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                                                temperature = "Error"
+                                                description = "Network failure"
+                                                screenState = ScreenState.Results
+                                            }
+                                        })
+                                    }
+                                }
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(onClick = {/*fetch weather*/}) {
-                                Text("Search")
-                            }
+
+                            ScreenState.Loading -> LoadingScreen()
+
+                            ScreenState.Results -> ResultsScreen(
+                                city = city,
+                                temperature = temperature,
+                                description = description,
+                                onSearchAgain = {
+                                    city = ""
+                                    screenState = ScreenState.Search
+                                }
+                            )
                         }
                     }
-                    // end of weather ui
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    HowsTheWeatherTheme {
-        Greeting("Android")
     }
 }
