@@ -18,6 +18,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import com.example.howstheweather.BuildConfig
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
                 var city by remember { mutableStateOf("") }
                 var temperature by remember { mutableStateOf("") }
                 var description by remember { mutableStateOf("") }
+                var forecastItems by remember { mutableStateOf<List<ForecastItem>>(emptyList()) }
                 var screenState by remember { mutableStateOf<ScreenState>(ScreenState.Search) }
 
                 Scaffold(
@@ -54,33 +56,55 @@ class MainActivity : ComponentActivity() {
                                     if (city.isNotBlank()) {
                                         screenState = ScreenState.Loading
 
-                                        println("API KEY VALUE: ${BuildConfig.WEATHER_API_KEY}")
-                                        val call = api.getWeather(city, BuildConfig.WEATHER_API_KEY)
-                                        call.enqueue(object : Callback<WeatherResponse> {
-                                            override fun onResponse(
-                                                call: Call<WeatherResponse>,
-                                                response: Response<WeatherResponse>
-                                            ) {
-                                                println("RESPONSE CODE: ${response.code()}")  // add this
-                                                println("RESPONSE ERROR: ${response.errorBody()?.string()}")
+                                        var weatherDone = false
+                                        var forecastDone = false
 
-                                                if (response.isSuccessful) {
-                                                    val weather = response.body()
-                                                    temperature = weather?.main?.temp?.toString() ?: "N/A"
-                                                    description = weather?.weather?.get(0)?.description ?: "N/A"
-                                                } else {
-                                                    temperature = "Error"
-                                                    description = "City not found"
+                                        fun checkIfBothDone() {
+                                            if (weatherDone && forecastDone) {
+                                                screenState = ScreenState.Results
+                                            }
+                                        }
+
+                                        // Current weather call
+                                        api.getWeather(city, BuildConfig.WEATHER_API_KEY)
+                                            .enqueue(object : Callback<WeatherResponse> {
+                                                override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
+                                                    if (response.isSuccessful) {
+                                                        val weather = response.body()
+                                                        temperature = weather?.main?.temp?.toString() ?: "N/A"
+                                                        description = weather?.weather?.get(0)?.description ?: "N/A"
+                                                    } else {
+                                                        temperature = "Error"
+                                                        description = "City not found"
+                                                    }
+                                                    weatherDone = true
+                                                    checkIfBothDone()
                                                 }
-                                                screenState = ScreenState.Results
-                                            }
 
-                                            override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-                                                temperature = "Error"
-                                                description = "Network failure"
-                                                screenState = ScreenState.Results
-                                            }
-                                        })
+                                                override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                                                    temperature = "Error"
+                                                    description = "Network failure"
+                                                    weatherDone = true
+                                                    checkIfBothDone()
+                                                }
+                                            })
+
+                                        // Forecast call
+                                        api.getForecast(city, BuildConfig.WEATHER_API_KEY)
+                                            .enqueue(object : Callback<ForecastResponse> {
+                                                override fun onResponse(call: Call<ForecastResponse>, response: Response<ForecastResponse>) {
+                                                    if (response.isSuccessful) {
+                                                        forecastItems = response.body()?.list?.take(8) ?: emptyList()
+                                                    }
+                                                    forecastDone = true
+                                                    checkIfBothDone()
+                                                }
+
+                                                override fun onFailure(call: Call<ForecastResponse>, t: Throwable) {
+                                                    forecastDone = true
+                                                    checkIfBothDone()
+                                                }
+                                            })
                                     }
                                 }
                             )
@@ -91,8 +115,10 @@ class MainActivity : ComponentActivity() {
                                 city = city,
                                 temperature = temperature,
                                 description = description,
+                                forecastItems = forecastItems,
                                 onSearchAgain = {
                                     city = ""
+                                    forecastItems = emptyList()
                                     screenState = ScreenState.Search
                                 }
                             )
