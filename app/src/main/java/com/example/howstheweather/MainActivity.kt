@@ -16,8 +16,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-
-private const val API_KEY = "83e08c90d56320b579751f3203ff3e43"
+import com.example.howstheweather.BuildConfig
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,12 +54,16 @@ class MainActivity : ComponentActivity() {
                                     if (city.isNotBlank()) {
                                         screenState = ScreenState.Loading
 
-                                        val call = api.getWeather(city, API_KEY)
+                                        println("API KEY VALUE: ${BuildConfig.WEATHER_API_KEY}")
+                                        val call = api.getWeather(city, BuildConfig.WEATHER_API_KEY)
                                         call.enqueue(object : Callback<WeatherResponse> {
                                             override fun onResponse(
                                                 call: Call<WeatherResponse>,
                                                 response: Response<WeatherResponse>
                                             ) {
+                                                println("RESPONSE CODE: ${response.code()}")  // add this
+                                                println("RESPONSE ERROR: ${response.errorBody()?.string()}")
+
                                                 if (response.isSuccessful) {
                                                     val weather = response.body()
                                                     temperature = weather?.main?.temp?.toString() ?: "N/A"
