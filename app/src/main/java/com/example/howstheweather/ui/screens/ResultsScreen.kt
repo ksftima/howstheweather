@@ -16,8 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.howstheweather.ForecastItem
-import androidx.compose.animation.core.*
-import androidx.compose.ui.graphics.graphicsLayer
 
 fun getWeatherEmoji(description: String): String {
     return when {
@@ -31,26 +29,6 @@ fun getWeatherEmoji(description: String): String {
         description.contains("mist") || description.contains("fog") -> "🌫️"
         else -> "🌡️"
     }
-}
-
-@Composable
-fun FloatingEmoji(emoji: String) {
-    val infiniteTransition = rememberInfiniteTransition(label = "float")
-    val offsetY by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -18f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2000, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "floatY"
-    )
-
-    Text(
-        text = emoji,
-        fontSize = 72.sp,
-        modifier = Modifier.graphicsLayer { translationY = offsetY }
-    )
 }
 
 @Composable

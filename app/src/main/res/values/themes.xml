@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.HowsTheWeather" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">#F5F9FF</item>
+        <item name="android:windowBackground">#DB8AB3</item>
+        <item name="android:windowDisablePreview">true</item>
     </style>
 </resources>

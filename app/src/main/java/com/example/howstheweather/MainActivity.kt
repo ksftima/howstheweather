@@ -1,5 +1,6 @@
 package com.example.howstheweather
 
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,7 +18,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import com.example.howstheweather.BuildConfig
 import androidx.compose.ui.graphics.Color
 
 
